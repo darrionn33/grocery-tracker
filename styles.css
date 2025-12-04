@@ -42,12 +42,12 @@ body {
   gap: 10px;
   overflow: scroll;
 }
-.filters{
+.filters {
   display: flex;
   gap: 10px;
   margin-bottom: 10px;
 }
-.filters > input{
+.filters > input {
   flex: 1;
   color: white;
   border-radius: 10px;
@@ -55,7 +55,7 @@ body {
   background-color: rgb(20, 20, 20);
   border: 1px solid rgb(60, 60, 60);
 }
-.date-total{
+.date-total {
   width: 100%;
   padding-bottom: 5px;
   border-bottom: 2px solid gray;
@@ -63,24 +63,24 @@ body {
   justify-content: space-between;
   margin-top: 10px;
 }
-.total{
+.total {
   width: 100%;
   padding-top: 5px;
   border-top: 2px solid gray;
   text-align: end;
   padding-right: 10px;
 }
-.purchase-card{
+.purchase-card {
   display: flex;
   justify-content: space-between;
   background-color: rgb(30, 30, 30);
   padding: 20px 10px;
   border-radius: 10px;
 }
-.purchase-card.header{
+.purchase-card.header {
   font-weight: bold;
 }
-.purchase-card > *{
+.purchase-card > * {
   flex: 1;
   text-align: center;
 }
