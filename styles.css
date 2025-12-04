@@ -34,12 +34,18 @@ body {
   color: teal;
 }
 .page {
-  height: calc(100% - 90px);
   width: 100%;
   padding: 10px;
   display: flex;
   flex-direction: column;
+}
+.page .purchases {
+  display: flex;
+  flex-direction: column;
   gap: 10px;
+  padding: 0 2px;
+  overflow: hidden;
+  height: calc(100dvh - 151px);
   overflow: scroll;
 }
 .filters {
@@ -75,7 +81,7 @@ body {
   justify-content: space-between;
   background-color: rgb(30, 30, 30);
   padding: 20px 10px;
-  border-radius: 10px;
+  border-radius: 5px;
 }
 .purchase-card.header {
   font-weight: bold;
@@ -85,7 +91,6 @@ body {
   text-align: center;
 }
 .search-bar {
-  /* position: sticky; */
   top: 0;
   font-size: large;
   color: white;
@@ -142,4 +147,7 @@ p.qty {
   background-color: darkgreen;
   padding: 10px;
   border-radius: 10px;
+}
+::-webkit-scrollbar {
+  display: none;
 }
