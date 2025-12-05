@@ -34,7 +34,7 @@ document.querySelectorAll(".bottom-nav-bar > *").forEach((option) => {
   };
 });
 
-// function to format YYYY-MM-DD to DD, MMM, YYYY
+// function to format YYYY-MM-DD to DD MMM YYYY
 
 function formatDate(dateStr) {
   const [year, month, day] = dateStr.split("-").map(Number);
@@ -82,6 +82,7 @@ const generatePage = (page) => {
   pageDiv.replaceChildren();
   switch (page) {
     case 0:
+      //purchases
       let filtersDiv = document.createElement("div");
       filtersDiv.classList.add("filters");
 
@@ -100,11 +101,23 @@ const generatePage = (page) => {
       purchasesDiv.classList.add("purchases");
 
       searchBar.oninput = (searchTerm) => {
-        generatePurchases(purchasesDiv, null, searchTerm.target.value);
+        if (typeof dateInput.value === "string") {
+          generatePurchases(
+            purchasesDiv,
+            dateInput.value,
+            searchTerm.target.value
+          );
+        } else {
+          generatePurchases(purchasesDiv, null, searchTerm.target.value);
+        }
       };
 
       dateInput.onchange = (date) => {
-        generatePurchases(purchasesDiv, date.target.value, null);
+        if (typeof searchBar.value === "string") {
+          generatePurchases(purchasesDiv, date.target.value, searchBar.value);
+        } else {
+          generatePurchases(purchasesDiv, date.target.value, null);
+        }
       };
 
       pageDiv.appendChild(filtersDiv);
@@ -153,16 +166,9 @@ const generatePurchases = (purchasesDiv, filterDate, searchTerm) => {
   purchasesDiv.replaceChildren();
   const allDates = purchases.map((p) => p.date);
   const uniqueDates = [...new Set(allDates)];
-  uniqueDates.sort();
+  uniqueDates.sort().reverse();
 
   uniqueDates.forEach((date) => {
-    if (typeof filterDate === "string") {
-      if (date == filterDate || filterDate == "") {
-        purchasesDiv.appendChild(generateDateTotalDiv(date));
-      }
-    } else {
-      purchasesDiv.appendChild(generateDateTotalDiv(date));
-    }
     purchases
       .filter((i) => {
         if (typeof searchTerm == "string") {
@@ -178,14 +184,23 @@ const generatePurchases = (purchasesDiv, filterDate, searchTerm) => {
           return i.date == date;
         }
       })
-      .filter((i) => {
+      .filter((i, index) => {
         if (typeof filterDate == "string") {
           if (filterDate !== "") {
+            if (i.date == filterDate && index == 0) {
+              purchasesDiv.appendChild(generateDateTotalDiv(date));
+            }
             return i.date == date && i.date == filterDate;
           } else {
+            if (index == 0) {
+              purchasesDiv.appendChild(generateDateTotalDiv(date));
+            }
             return i.date == date;
           }
         } else {
+          if (index == 0) {
+            purchasesDiv.appendChild(generateDateTotalDiv(date));
+          }
           return i.date == date;
         }
       })
