@@ -1,9 +1,12 @@
 // get data
 
-const inventory = {
-  Milk: 4,
-  Bread: 1,
-};
+const inventory = [
+  { name: "Bread", quantity: 1, min: 1, lastUpdatedAt: "01/12/25" },
+  { name: "Milk", quantity: 6, min: 3, lastUpdatedAt: "01/12/25" },
+  { name: "Broccolo", quantity: 9, min: 4, lastUpdatedAt: "01/12/25" },
+  { name: "Broccolo", quantity: 1, min: 4, lastUpdatedAt: "01/12/25" },
+  { name: "Pasta", quantity: 2, min: 4, lastUpdatedAt: "01/12/25" },
+];
 
 const purchases = [
   { name: "Milk", quantity: 6, unit: "500ml", price: 40, date: "2025-12-01" },
@@ -80,20 +83,20 @@ function formatDate(dateStr) {
 const generatePage = (page) => {
   const pageDiv = document.querySelector(".page");
   pageDiv.replaceChildren();
+
+  let filtersDiv = document.createElement("div");
+  filtersDiv.classList.add("filters");
+
+  let searchBar = document.createElement("input");
+  searchBar.placeholder = "Search...";
+
+  let dateInput = document.createElement("input");
+  dateInput.type = "date";
   switch (page) {
     case 0:
       //purchases
-      let filtersDiv = document.createElement("div");
-      filtersDiv.classList.add("filters");
-
-      let searchBar = document.createElement("input");
-      searchBar.placeholder = "Search...";
-
-      let dateInput = document.createElement("input");
-      dateInput.type = "date";
       dateInput.name = "purchase-date";
       dateInput.id = "purchase-date";
-
       filtersDiv.appendChild(searchBar);
       filtersDiv.appendChild(dateInput);
 
@@ -131,8 +134,120 @@ const generatePage = (page) => {
       break;
     case 2:
       //inventory
+
+      ["In", "Almost", "Out"].forEach((status, index) => {
+        const btn = document.createElement("button");
+        btn.classList.add(status.toLowerCase());
+        btn.innerText = status;
+
+        btn.onclick = () => {
+          [...filtersDiv.children].forEach((btn, index) => {
+            if (index < 3) {
+              btn.style.backgroundColor = "transparent";
+            }
+          });
+          btn.style.backgroundColor = getComputedStyle(btn).outlineColor;
+
+          if (typeof searchBar.value === "string") {
+            generateInventory(inventoryDiv, index, searchBar.value);
+          } else {
+            generateInventory(inventoryDiv, index);
+          }
+
+          if (filtersDiv.children.length < 4) {
+            const clearButton = document.createElement("button");
+            clearButton.innerText = "Clear";
+            filtersDiv.appendChild(clearButton);
+
+            clearButton.onclick = () => {
+              [...filtersDiv.children].forEach(
+                (btn) => (btn.style.backgroundColor = "transparent")
+              );
+              generateInventory(inventoryDiv);
+              filtersDiv.removeChild(clearButton);
+            };
+          }
+        };
+        filtersDiv.appendChild(btn);
+      });
+
+      const inventoryDiv = document.createElement("div");
+      inventoryDiv.classList.add("inventory");
+
+      inventoryDiv.appendChild(searchBar);
+
+      searchBar.oninput = (searchTerm) => {
+        generateInventory(inventoryDiv, 3, searchTerm.target.value);
+      };
+
+      pageDiv.appendChild(searchBar);
+      pageDiv.appendChild(filtersDiv);
+      pageDiv.appendChild(inventoryDiv);
+
+      generateInventory(inventoryDiv);
+
       break;
   }
+};
+
+// generate inventory items
+
+const generateInventory = (inventoryDiv, index = 3, searchTerm) => {
+  inventoryDiv.replaceChildren();
+  inventory
+    .filter((i) => {
+      switch (index) {
+        case 0:
+          return i.quantity > i.min;
+        case 1:
+          return i.quantity == i.min;
+        case 2:
+          return i.quantity < i.min;
+        case 3:
+          return true;
+      }
+    })
+    .filter((i) => {
+      if (searchTerm == "" || !searchTerm) {
+        return true;
+      } else {
+        return i.name.toLowerCase().startsWith(searchTerm.toLowerCase());
+      }
+    })
+    .forEach((item) => {
+      inventoryDiv.appendChild(generateInventoryCard(item));
+    });
+};
+
+//generate inventory cards
+
+const generateInventoryCard = (item) => {
+  let inventoryCardDiv = document.createElement("div");
+  inventoryCardDiv.classList.add("inventory-card");
+  let nameDiv = document.createElement("p");
+  nameDiv.classList.add("name");
+  nameDiv.innerText = item.name;
+  let qtyDiv = document.createElement("p");
+  qtyDiv.classList.add("qty");
+
+  if (item.quantity > item.min) {
+    qtyDiv.classList.add("in");
+  } else if (item.quantity == item.min) {
+    qtyDiv.classList.add("almost");
+  } else {
+    qtyDiv.classList.add("out");
+  }
+
+  qtyDiv.innerText = item.quantity;
+  let dateDiv = document.createElement("p");
+  dateDiv.classList.add("date");
+  dateDiv.innerText = item.lastUpdatedAt;
+
+  inventoryCardDiv.appendChild(nameDiv);
+  inventoryCardDiv.appendChild(qtyDiv);
+  inventoryCardDiv.appendChild(dateDiv);
+
+  return inventoryCardDiv;
 };
 
 // generate date-total div
@@ -239,22 +354,5 @@ const generatePurchaseCard = (purchase) => {
 
   return purchaseCardDiv;
 };
-function openFullscreen() {
-  let el = document.documentElement;
-  if (el.requestFullscreen) el.requestFullscreen();
-  else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-}
 
-// inventory filters
-
-document.querySelectorAll(".filters > button").forEach((button) => {
-  button.onclick = () => {
-    // openFullscreen();
-    document
-      .querySelectorAll(".filters > button")
-      .forEach((btn) => (btn.style.backgroundColor = "transparent"));
-    button.style.backgroundColor = getComputedStyle(button).outlineColor;
-  };
-});
-
-generatePage(0);
+generatePage(2);
