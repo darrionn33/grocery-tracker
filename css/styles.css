@@ -52,7 +52,6 @@ body {
 .filters {
   display: flex;
   gap: 10px;
-  /* margin-bottom: 10px; */
 }
 .filters > input {
   flex: 1;
@@ -171,4 +170,31 @@ p.qty.out {
 }
 ::-webkit-scrollbar {
   display: none;
+}
+
+/* Usage Page Styles */
+.usage-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 80px; /* Space for bottom nav */
+}
+
+.usage-card {
+  background-color: rgb(30, 30, 30);
+  padding: 15px;
+  border-radius: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.usage-card .name {
+  font-size: large;
+  font-weight: bold;
+}
+
+.usage-card .details {
+  color: #aaa;
+  font-size: small;
 }

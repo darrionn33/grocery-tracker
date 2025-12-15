@@ -23,6 +23,14 @@ const purchases = [
   { name: "Milk", quantity: 6, unit: "500ml", price: 40, date: "2025-12-02" },
   { name: "Milk", quantity: 6, unit: "500ml", price: 40, date: "2025-12-02" },
   { name: "Milk", quantity: 6, unit: "500ml", price: 40, date: "2025-12-02" },
+  { name: "Milk", quantity: 6, unit: "500ml", price: 40, date: "2025-12-02" },
+];
+
+const usage = [
+  { name: "Milk", quantity: 1, unit: "carton", date: "2025-12-10" },
+  { name: "Bread", quantity: 0.5, unit: "loaf", date: "2025-12-11" },
+  { name: "Eggs", quantity: 2, unit: "pcs", date: "2025-12-12" },
+  { name: "Cheese", quantity: 200, unit: "g", date: "2025-12-13" },
 ];
 
 // bottom nav bar highlighting & functionality
@@ -84,6 +92,20 @@ const generatePage = (page) => {
   const pageDiv = document.querySelector(".page");
   pageDiv.replaceChildren();
 
+  switch (page) {
+    case 0:
+      renderPurchasesPage(pageDiv);
+      break;
+    case 1:
+      renderUsagePage(pageDiv);
+      break;
+    case 2:
+      renderInventoryPage(pageDiv);
+      break;
+  }
+};
+
+const renderPurchasesPage = (pageDiv) => {
   let filtersDiv = document.createElement("div");
   filtersDiv.classList.add("filters");
 
@@ -92,102 +114,124 @@ const generatePage = (page) => {
 
   let dateInput = document.createElement("input");
   dateInput.type = "date";
-  switch (page) {
-    case 0:
-      //purchases
-      dateInput.name = "purchase-date";
-      dateInput.id = "purchase-date";
-      filtersDiv.appendChild(searchBar);
-      filtersDiv.appendChild(dateInput);
+  dateInput.name = "purchase-date";
+  dateInput.id = "purchase-date";
+  filtersDiv.appendChild(searchBar);
+  filtersDiv.appendChild(dateInput);
 
-      const purchasesDiv = document.createElement("div");
-      purchasesDiv.classList.add("purchases");
+  const purchasesDiv = document.createElement("div");
+  purchasesDiv.classList.add("purchases");
 
-      searchBar.oninput = (searchTerm) => {
-        if (typeof dateInput.value === "string") {
-          generatePurchases(
-            purchasesDiv,
-            dateInput.value,
-            searchTerm.target.value
-          );
-        } else {
-          generatePurchases(purchasesDiv, null, searchTerm.target.value);
+  searchBar.oninput = (searchTerm) => {
+    if (typeof dateInput.value === "string") {
+      generatePurchases(
+        purchasesDiv,
+        dateInput.value,
+        searchTerm.target.value
+      );
+    } else {
+      generatePurchases(purchasesDiv, null, searchTerm.target.value);
+    }
+  };
+
+  dateInput.onchange = (date) => {
+    if (typeof searchBar.value === "string") {
+      generatePurchases(purchasesDiv, date.target.value, searchBar.value);
+    } else {
+      generatePurchases(purchasesDiv, date.target.value, null);
+    }
+  };
+
+  pageDiv.appendChild(filtersDiv);
+  pageDiv.appendChild(purchasesDiv);
+
+  generatePurchases(purchasesDiv);
+};
+
+const renderUsagePage = (pageDiv) => {
+  const usageDiv = document.createElement("div");
+  usageDiv.classList.add("usage-list");
+
+  // Sort by date descending
+  const sortedUsage = usage.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  sortedUsage.forEach((item) => {
+    let card = document.createElement("div");
+    card.classList.add("usage-card");
+
+    let name = document.createElement("div");
+    name.innerText = item.name;
+    name.classList.add("name");
+
+    let details = document.createElement("div");
+    details.innerText = `${item.quantity} ${item.unit} on ${formatDate(item.date)}`;
+    details.classList.add("details");
+
+    card.appendChild(name);
+    card.appendChild(details);
+    usageDiv.appendChild(card);
+  });
+
+  pageDiv.appendChild(usageDiv);
+};
+
+const renderInventoryPage = (pageDiv) => {
+  let filtersDiv = document.createElement("div");
+  filtersDiv.classList.add("filters");
+
+  let searchBar = document.createElement("input");
+  searchBar.placeholder = "Search...";
+
+  ["In", "Almost", "Out"].forEach((status, index) => {
+    const btn = document.createElement("button");
+    btn.classList.add(status.toLowerCase());
+    btn.innerText = status;
+
+    btn.onclick = () => {
+      [...filtersDiv.children].forEach((btn, index) => {
+        if (index < 3) {
+          btn.style.backgroundColor = "transparent";
         }
-      };
-
-      dateInput.onchange = (date) => {
-        if (typeof searchBar.value === "string") {
-          generatePurchases(purchasesDiv, date.target.value, searchBar.value);
-        } else {
-          generatePurchases(purchasesDiv, date.target.value, null);
-        }
-      };
-
-      pageDiv.appendChild(filtersDiv);
-      pageDiv.appendChild(purchasesDiv);
-
-      generatePurchases(purchasesDiv);
-
-      break;
-    case 1:
-      // usage
-      break;
-    case 2:
-      //inventory
-
-      ["In", "Almost", "Out"].forEach((status, index) => {
-        const btn = document.createElement("button");
-        btn.classList.add(status.toLowerCase());
-        btn.innerText = status;
-
-        btn.onclick = () => {
-          [...filtersDiv.children].forEach((btn, index) => {
-            if (index < 3) {
-              btn.style.backgroundColor = "transparent";
-            }
-          });
-          btn.style.backgroundColor = getComputedStyle(btn).outlineColor;
-
-          if (typeof searchBar.value === "string") {
-            generateInventory(inventoryDiv, index, searchBar.value);
-          } else {
-            generateInventory(inventoryDiv, index);
-          }
-
-          if (filtersDiv.children.length < 4) {
-            const clearButton = document.createElement("button");
-            clearButton.innerText = "Clear";
-            filtersDiv.appendChild(clearButton);
-
-            clearButton.onclick = () => {
-              [...filtersDiv.children].forEach(
-                (btn) => (btn.style.backgroundColor = "transparent")
-              );
-              generateInventory(inventoryDiv);
-              filtersDiv.removeChild(clearButton);
-            };
-          }
-        };
-        filtersDiv.appendChild(btn);
       });
+      btn.style.backgroundColor = getComputedStyle(btn).outlineColor;
 
-      const inventoryDiv = document.createElement("div");
-      inventoryDiv.classList.add("inventory");
+      if (typeof searchBar.value === "string") {
+        generateInventory(inventoryDiv, index, searchBar.value);
+      } else {
+        generateInventory(inventoryDiv, index);
+      }
 
-      inventoryDiv.appendChild(searchBar);
+      if (filtersDiv.children.length < 4) {
+        const clearButton = document.createElement("button");
+        clearButton.innerText = "Clear";
+        filtersDiv.appendChild(clearButton);
 
-      searchBar.oninput = (searchTerm) => {
-        generateInventory(inventoryDiv, 3, searchTerm.target.value);
-      };
+        clearButton.onclick = () => {
+          [...filtersDiv.children].forEach(
+            (btn) => (btn.style.backgroundColor = "transparent")
+          );
+          generateInventory(inventoryDiv);
+          filtersDiv.removeChild(clearButton);
+        };
+      }
+    };
+    filtersDiv.appendChild(btn);
+  });
 
-      pageDiv.appendChild(searchBar);
-      pageDiv.appendChild(filtersDiv);
-      pageDiv.appendChild(inventoryDiv);
+  const inventoryDiv = document.createElement("div");
+  inventoryDiv.classList.add("inventory");
 
-      generateInventory(inventoryDiv);
+  inventoryDiv.appendChild(searchBar);
 
-      break;
-  }
+  searchBar.oninput = (searchTerm) => {
+    generateInventory(inventoryDiv, 3, searchTerm.target.value);
+  };
+
+  pageDiv.appendChild(searchBar);
+  pageDiv.appendChild(filtersDiv);
+  pageDiv.appendChild(inventoryDiv);
+
+  generateInventory(inventoryDiv);
 };
 
 // generate inventory items
