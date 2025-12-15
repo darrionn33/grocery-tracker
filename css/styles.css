@@ -18,9 +18,15 @@ body {
   bottom: 0;
   width: 100dvw;
   display: flex;
+  font-family: "Poppins", sans-serif;
+  overflow-x: hidden;
+  position: relative;
   justify-content: space-around;
   padding: 20px;
 }
+
+
+
 .bottom-nav-bar > * {
   display: flex;
   flex-direction: column;
@@ -197,4 +203,102 @@ p.qty.out {
 .usage-card .details {
   color: #aaa;
   font-size: small;
+}
+
+/* FAB Styles */
+.fab {
+  position: fixed;
+  bottom: 100px;
+  right: 20px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: teal;
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  z-index: 1000;
+}
+
+.fab .material-symbols-outlined {
+  font-size: 30px;
+}
+
+/* Modal Styles */
+.modal {
+  position: fixed;
+  z-index: 2000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background-color: rgb(40, 40, 40);
+  margin: 15% auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%;
+  max-width: 500px;
+  border-radius: 10px;
+  position: relative;
+}
+
+.close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.close:hover,
+.close:focus {
+  color: white;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* Form Styles */
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+form h3 {
+  color: teal;
+  text-align: center;
+}
+
+form input {
+  padding: 12px;
+  border-radius: 5px;
+  border: 1px solid #555;
+  background-color: rgb(20, 20, 20);
+  color: white;
+}
+
+form button {
+  padding: 12px;
+  background-color: teal;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+form button:hover {
+  background-color: darkcyan;
 }
