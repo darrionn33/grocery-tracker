@@ -48,9 +48,71 @@ let usage = getStoredData('usage', initialUsageMock);
 
 const resetData = (loadDemo) => {
     if (loadDemo) {
-        inventory = JSON.parse(JSON.stringify(initialInventoryMock));
-        purchases = JSON.parse(JSON.stringify(initialPurchasesMock));
-        usage = JSON.parse(JSON.stringify(initialUsageMock));
+        // Generate Dynamic Demo Data for last 7 days
+        const items = ["Milk", "Bread", "Potato", "Sugar"];
+        const units = { "Milk": "L", "Bread": "loaf", "Potato": "kg", "Sugar": "kg" };
+        const prices = { "Milk": 60, "Bread": 40, "Potato": 30, "Sugar": 45 };
+        
+        inventory = [];
+        purchases = [];
+        usage = [];
+        
+        // Initialize Inventory with baseline
+        items.forEach(name => {
+            inventory.push({
+                name: name,
+                quantity: Math.floor(Math.random() * 5) + 2, // Random 2-6
+                unit: units[name],
+                min: 2,
+                price: prices[name],
+                lastUpdatedAt: new Date().toISOString().split('T')[0]
+            });
+        });
+        
+        // Generate History
+        const today = new Date();
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date(today);
+            date.setDate(date.getDate() - i);
+            const dateStr = date.toISOString().split('T')[0];
+            
+            items.forEach(name => {
+                // Randomly purchase
+                if (Math.random() > 0.7) {
+                    const qty = Math.floor(Math.random() * 3) + 1;
+                    purchases.push({
+                        name: name,
+                        quantity: qty,
+                        unit: units[name],
+                        price: prices[name],
+                        date: dateStr
+                    });
+                    // Update inventory? 
+                    // Since we set a random baseline inventory above, strict correlation isn't required for "demo" feel,
+                    // BUT it's better if we just say "Inventory is result of this".
+                    // Let's adjust inventory:
+                    // actually, let's just make the inventory purely the result of these txns? 
+                    // No, that might result in 0 or negative if we add usage.
+                    // Let's just create random independent history for the graph visuals 
+                    // and let the inventory be the random baseline we set.
+                    // The user asked for "demo list using...". 
+                    // To keep it simple and robust:
+                    // 1. Transactions are created. 
+                    // 2. Inventory is just set to a "good state" manually.
+                }
+                
+                // Randomly use
+                if (Math.random() > 0.6) {
+                    const qty = Math.floor(Math.random() * 2) + 0.5;
+                    usage.push({
+                        name: name,
+                        quantity: qty,
+                        unit: units[name],
+                        date: dateStr
+                    });
+                }
+            });
+        }
     } else {
         inventory = [];
         purchases = [];
@@ -58,7 +120,8 @@ const resetData = (loadDemo) => {
     }
     saveData();
     // Refresh current page
-    const currentPageIndex = parseInt(document.querySelector('.bottom-nav-bar .selected').dataset.page);
+    const navActive = document.querySelector('.nav .nav__item--active');
+    const currentPageIndex = navActive ? parseInt(navActive.dataset.page) : 2; 
     generatePage(currentPageIndex);
 };
 
@@ -67,32 +130,24 @@ const openSettingsModal = () => {
   modal.classList.add("modal");
   
   const modalContent = document.createElement("div");
-  modalContent.classList.add("modal-content");
-  modalContent.style.textAlign = "center";
-  modalContent.style.maxHeight = "90vh";
-  modalContent.style.overflowY = "auto";
+  modalContent.classList.add("modal__content");
   
   const closeBtn = document.createElement("span");
-  closeBtn.classList.add("close");
+  closeBtn.classList.add("modal__close");
   closeBtn.innerHTML = "&times;";
   closeBtn.onclick = () => modal.remove();
   
   const title = document.createElement("h3");
   title.innerText = "Settings";
-  title.style.color = "teal";
-  title.style.marginBottom = "20px";
+  title.classList.add("modal__title");
 
   // Reset Section
   const resetSection = document.createElement("div");
-  resetSection.style.marginBottom = "20px";
-  resetSection.style.borderBottom = "1px solid #555";
-  resetSection.style.paddingBottom = "20px";
+  resetSection.classList.add("modal__section");
   
   const resetBtn = document.createElement("button");
   resetBtn.innerText = "Reset All Data";
-  resetBtn.style.width = "100%";
-  resetBtn.style.backgroundColor = "#d9534f"; // Red
-  resetBtn.style.color = "white";
+  resetBtn.classList.add("btn", "btn--danger", "btn--full");
   resetBtn.onclick = () => {
       openResetModal(); // Keeps existing logic, just triggers it from here
       modal.remove();
@@ -101,22 +156,17 @@ const openSettingsModal = () => {
 
   // Export Section
   const exportSection = document.createElement("div");
-  exportSection.style.marginBottom = "20px";
-  exportSection.innerHTML = "<h4 style='color:#ccc; margin-bottom:10px;'>Export Data</h4>";
+  exportSection.classList.add("modal__section");
+  exportSection.innerHTML = "<h4 class='modal__subtitle'>Export Data</h4>";
   
   const exportArea = document.createElement("textarea");
-  exportArea.style.width = "100%";
-  exportArea.style.height = "100px";
-  exportArea.style.backgroundColor = "#222";
-  exportArea.style.color = "#fff";
-  exportArea.style.border = "1px solid #555";
-  exportArea.style.marginBottom = "10px";
+  exportArea.classList.add("form__textarea");
   exportArea.readOnly = true;
   exportArea.value = JSON.stringify({ inventory, purchases, usage }, null, 2);
   
   const copyBtn = document.createElement("button");
   copyBtn.innerText = "Copy to Clipboard";
-  copyBtn.style.width = "100%";
+  copyBtn.classList.add("btn", "btn--primary", "btn--full");
   copyBtn.onclick = () => {
     exportArea.select();
     document.execCommand("copy"); // Fallback
@@ -130,21 +180,16 @@ const openSettingsModal = () => {
 
   // Import Section
   const importSection = document.createElement("div");
-  importSection.innerHTML = "<h4 style='color:#ccc; margin-bottom:10px;'>Import Data</h4>";
+  importSection.classList.add("modal__section");
+  importSection.innerHTML = "<h4 class='modal__subtitle'>Import Data</h4>";
   
   const importArea = document.createElement("textarea");
-  importArea.style.width = "100%";
-  importArea.style.height = "100px";
-  importArea.style.backgroundColor = "#222";
-  importArea.style.color = "#fff";
-  importArea.style.border = "1px solid #555";
-  importArea.style.marginBottom = "10px";
+  importArea.classList.add("form__textarea");
   importArea.placeholder = "Paste data here...";
   
   const importBtn = document.createElement("button");
   importBtn.innerText = "Import Data";
-  importBtn.style.width = "100%";
-  importBtn.style.backgroundColor = "teal";
+  importBtn.classList.add("btn", "btn--primary", "btn--full");
   importBtn.onclick = () => {
       try {
           const data = JSON.parse(importArea.value);
@@ -177,50 +222,35 @@ const openSettingsModal = () => {
 
 const openResetModal = () => {
   const modal = document.createElement("div");
-  modal.classList.add("modal");
-  modal.style.zIndex = "2100"; // Higher than settings modal if open
+  modal.classList.add("modal", "modal--top"); // z-index handling via class
   
   const modalContent = document.createElement("div");
-  modalContent.classList.add("modal-content");
-  modalContent.style.textAlign = "center";
+  modalContent.classList.add("modal__content", "modal__content--center");
   
   const closeBtn = document.createElement("span");
-  closeBtn.classList.add("close");
+  closeBtn.classList.add("modal__close");
   closeBtn.innerHTML = "&times;";
   closeBtn.onclick = () => modal.remove();
   
   const title = document.createElement("h3");
   title.innerText = "Reset Data";
-  title.style.color = "teal";
+  title.classList.add("modal__title");
 
   const msg = document.createElement("p");
   msg.innerText = "Do you want to clear all data or load demo data?";
-  msg.style.marginBottom = "20px";
-  msg.style.color = "#ccc";
+  msg.classList.add("modal__msg");
 
   const btnContainer = document.createElement("div");
-  btnContainer.style.display = "flex";
-  btnContainer.style.justifyContent = "space-around";
-  btnContainer.style.gap = "10px";
+  btnContainer.classList.add("modal__actions");
 
   const clearBtn = document.createElement("button");
   clearBtn.innerText = "Clear All (Empty)";
-  clearBtn.style.padding = "10px";
-  clearBtn.style.backgroundColor = "#d9534f";
-  clearBtn.style.color = "white";
-  clearBtn.style.border = "none";
-  clearBtn.style.borderRadius = "5px";
-  clearBtn.style.cursor = "pointer";
+  clearBtn.classList.add("btn", "btn--danger");
   clearBtn.onclick = () => { resetData(false); modal.remove(); };
 
   const demoBtn = document.createElement("button");
   demoBtn.innerText = "Load Demo Data";
-  demoBtn.style.padding = "10px";
-  demoBtn.style.backgroundColor = "teal";
-  demoBtn.style.color = "white";
-  demoBtn.style.border = "none";
-  demoBtn.style.borderRadius = "5px";
-  demoBtn.style.cursor = "pointer";
+  demoBtn.classList.add("btn", "btn--primary");
   demoBtn.onclick = () => { resetData(true); modal.remove(); };
 
   btnContainer.appendChild(clearBtn);
@@ -236,12 +266,12 @@ const openResetModal = () => {
 
 // bottom nav bar highlighting & functionality
 
-document.querySelectorAll(".bottom-nav-bar > *").forEach((option) => {
+document.querySelectorAll(".nav__item").forEach((option) => {
   option.onclick = () => {
     document
-      .querySelectorAll(".bottom-nav-bar > *")
-      .forEach((item) => item.classList.remove("selected"));
-    option.classList.add("selected");
+      .querySelectorAll(".nav__item")
+      .forEach((item) => item.classList.remove("nav__item--active"));
+    option.classList.add("nav__item--active");
     generatePage(+option.dataset.page);
   };
 });
@@ -290,7 +320,7 @@ function formatDate(dateStr) {
 // page generation
 
 const generatePage = (page) => {
-  const pageDiv = document.querySelector(".page");
+  const pageDiv = document.querySelector(".app-content");
   pageDiv.replaceChildren();
 
   switch (page) {
@@ -307,87 +337,350 @@ const generatePage = (page) => {
 };
 
 const renderPurchasesPage = (pageDiv) => {
+  // --- Chart Section ---
+  const chartSection = document.createElement("div");
+  chartSection.classList.add("chart-section");
+  chartSection.style.height = "40vh";
+  chartSection.style.display = "flex";
+  chartSection.style.flexDirection = "column";
+  chartSection.style.marginBottom = "20px";
+  chartSection.style.background = "var(--color-surface)";
+  chartSection.style.padding = "10px";
+  chartSection.style.borderRadius = "var(--border-radius)";
+
+  // Navigation
+  const navDiv = document.createElement("div");
+  navDiv.style.display = "flex";
+  navDiv.style.justifyContent = "space-between";
+  navDiv.style.alignItems = "center";
+  navDiv.style.marginBottom = "10px";
+
+  const prevBtn = document.createElement("button");
+  prevBtn.innerText = "<";
+  prevBtn.classList.add("btn", "btn--icon");
+  
+  const monthLabel = document.createElement("span");
+  monthLabel.style.fontWeight = "bold";
+  monthLabel.style.color = "var(--color-text)";
+
+  const nextBtn = document.createElement("button");
+  nextBtn.innerText = ">";
+  nextBtn.classList.add("btn", "btn--icon");
+
+  navDiv.appendChild(prevBtn);
+  navDiv.appendChild(monthLabel);
+  navDiv.appendChild(nextBtn);
+
+  // Canvas
+  const canvas = document.createElement("canvas");
+  canvas.id = "purchaseChart";
+  
+  chartSection.appendChild(navDiv);
+  chartSection.appendChild(canvas);
+  
+  // --- Filters ---
   let filtersDiv = document.createElement("div");
-  filtersDiv.classList.add("filters");
+  filtersDiv.classList.add("filter-bar");
 
   let searchBar = document.createElement("input");
-  searchBar.placeholder = "Search...";
-
-  let dateInput = document.createElement("input");
-  dateInput.type = "date";
-  dateInput.name = "purchase-date";
-  dateInput.id = "purchase-date";
-  filtersDiv.appendChild(searchBar);
-  filtersDiv.appendChild(dateInput);
+  searchBar.classList.add("form__input", "form__input--search");
+  searchBar.placeholder = "Search purchases...";
 
   const purchasesDiv = document.createElement("div");
-  purchasesDiv.classList.add("purchases");
-
-  searchBar.oninput = (searchTerm) => {
-    if (typeof dateInput.value === "string") {
-      generatePurchases(
-        purchasesDiv,
-        dateInput.value,
-        searchTerm.target.value
-      );
-    } else {
-      generatePurchases(purchasesDiv, null, searchTerm.target.value);
-    }
-  };
-
-  dateInput.onchange = (date) => {
-    if (typeof searchBar.value === "string") {
-      generatePurchases(purchasesDiv, date.target.value, searchBar.value);
-    } else {
-      generatePurchases(purchasesDiv, date.target.value, null);
-    }
-  };
-
+  purchasesDiv.classList.add("card-list");
+  
+  pageDiv.appendChild(chartSection);
+  filtersDiv.appendChild(searchBar);
   pageDiv.appendChild(filtersDiv);
   pageDiv.appendChild(purchasesDiv);
 
-  generatePurchases(purchasesDiv);
+  // --- Logic ---
+  let currentChartDate = new Date();
+  let chartInstance = null;
+
+  const updateView = () => {
+    const year = currentChartDate.getFullYear();
+    const month = currentChartDate.getMonth();
+    
+    // Update Label
+    monthLabel.innerText = currentChartDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+    
+    // Update Chart
+    chartInstance = renderPurchaseChart(canvas, purchases, year, month, chartInstance);
+    
+    // Update List
+    renderList(searchBar.value);
+  };
+
+  const renderList = (filterTerm = "") => {
+    purchasesDiv.replaceChildren();
+    
+    const year = currentChartDate.getFullYear();
+    const month = currentChartDate.getMonth();
+
+    const sortedPurchases = purchases
+      .filter(p => {
+          const d = new Date(p.date);
+          return d.getFullYear() === year && d.getMonth() === month;
+      })
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .filter(p => !filterTerm || p.name.toLowerCase().includes(filterTerm.toLowerCase()));
+    
+    if (sortedPurchases.length === 0) {
+        purchasesDiv.innerHTML = `<p style="text-align:center; color:var(--color-text-muted);">No purchases in ${monthLabel.innerText}.</p>`;
+        return;
+    }
+
+    let lastDate = null;
+    sortedPurchases.forEach((purchase) => {
+      if (purchase.date !== lastDate) {
+         purchasesDiv.appendChild(generateDateTotalDiv(purchase.date));
+         lastDate = purchase.date;
+      }
+      purchasesDiv.appendChild(generatePurchaseCard(purchase));
+    });
+  };
+
+  prevBtn.onclick = () => {
+      currentChartDate.setMonth(currentChartDate.getMonth() - 1);
+      updateView();
+  };
+
+  nextBtn.onclick = () => {
+      currentChartDate.setMonth(currentChartDate.getMonth() + 1);
+      updateView();
+  };
+  
+  searchBar.oninput = (e) => renderList(e.target.value);
+
+  updateView(); // Initial Render
   renderFAB("purchase");
 };
 
-const renderUsagePage = (pageDiv) => {
-  const usageDiv = document.createElement("div");
-  usageDiv.classList.add("usage-list");
+const renderPurchaseChart = (canvas, allPurchases, year, month, existingChart) => {
+    if (existingChart) existingChart.destroy();
 
+    // 1. Filter Data for Month
+    const monthlyData = allPurchases.filter(p => {
+        const d = new Date(p.date);
+        return d.getFullYear() === year && d.getMonth() === month;
+    });
+
+    // 2. Aggregate by Day
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const dailyTotals = new Array(daysInMonth).fill(0);
+    
+    monthlyData.forEach(p => {
+        const day = new Date(p.date).getDate(); // 1-31
+        const cost = p.price * p.quantity;
+        dailyTotals[day - 1] += cost;
+    });
+    
+    // 3. Labels
+    const labels = Array.from({length: daysInMonth}, (_, i) => i + 1);
+
+    // 4. Render
+    return new Chart(canvas, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Daily Spending (₹)',
+                data: dailyTotals,
+                borderColor: '#009688', // Teal
+                backgroundColor: 'rgba(0, 150, 136, 0.1)',
+                borderWidth: 2,
+                tension: 0.3,
+                pointRadius: 3,
+                pointBackgroundColor: '#009688',
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: '#333' },
+                    ticks: { color: '#a0a0a0' }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: '#a0a0a0', maxTicksLimit: 10 }
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                         label: (context) => ` ₹ ${context.parsed.y.toFixed(2)}`
+                    }
+                }
+            }
+        }
+    });
+};
+
+const renderUsagePage = (pageDiv) => {
+  // Filters & Search
+  let filtersDiv = document.createElement("div");
+  filtersDiv.classList.add("filter-bar");
+
+  let searchBar = document.createElement("input");
+  searchBar.classList.add("form__input", "form__input--search");
+  searchBar.placeholder = "Search usage...";
+  
+  // Container for Search
+  const searchContainer = document.createElement("div");
+  searchContainer.classList.add("search-container");
+  searchContainer.appendChild(searchBar);
+  
+  // Chart Container
+  const chartContainer = document.createElement("div");
+  chartContainer.classList.add("chart-container");
+  chartContainer.style.marginBottom = "20px";
+  chartContainer.style.background = "var(--color-surface)";
+  chartContainer.style.padding = "10px";
+  chartContainer.style.borderRadius = "var(--border-radius)";
+  
+  const canvas = document.createElement("canvas");
+  canvas.id = "usageChart";
+  chartContainer.appendChild(canvas);
+
+  const usageDiv = document.createElement("div");
+  usageDiv.classList.add("card-list");
+
+  searchBar.oninput = (e) => {
+    generateUsageList(usageDiv, e.target.value);
+  };
+
+  pageDiv.appendChild(searchContainer);
+  pageDiv.appendChild(chartContainer);
+  pageDiv.appendChild(usageDiv);
+  
+  generateUsageList(usageDiv);
+  renderUsageChart(canvas);
+  renderFAB("usage");
+};
+
+const formatUnit = (unit, qty) => {
+  if (unit && unit.trim() !== '') return unit;
+  return qty === 1 ? "no." : "nos.";
+};
+
+const generateUsageList = (container, searchTerm = "") => {
+  container.replaceChildren();
+  
   // Sort by date descending
-  const sortedUsage = usage.sort((a, b) => new Date(b.date) - new Date(a.date));
+  const sortedUsage = usage
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .filter(item => {
+        if (!searchTerm) return true;
+        return item.name.toLowerCase().includes(searchTerm.toLowerCase());
+    });
+
+  if (sortedUsage.length === 0) {
+      const emptyMsg = document.createElement("p");
+      emptyMsg.innerText = "No usage history found.";
+      emptyMsg.style.color = "var(--color-text-muted)";
+      emptyMsg.style.textAlign = "center";
+      container.appendChild(emptyMsg);
+      return;
+  }
 
   sortedUsage.forEach((item) => {
     let card = document.createElement("div");
-    card.classList.add("usage-card");
+    card.classList.add("card", "card--usage");
 
     let name = document.createElement("div");
     name.innerText = item.name;
-    name.classList.add("name");
+    name.classList.add("card__header");
 
     let details = document.createElement("div");
-    details.innerText = `${item.quantity} ${item.unit} on ${formatDate(item.date)}`;
-    details.classList.add("details");
+    details.innerText = `${item.quantity} ${formatUnit(item.unit, item.quantity)} on ${formatDate(item.date)}`;
+    details.classList.add("card__detail");
 
     card.appendChild(name);
     card.appendChild(details);
-    usageDiv.appendChild(card);
+    
+    card.style.cursor = "pointer";
+    card.onclick = () => openEditUsageModal(item);
+    
+    container.appendChild(card);
   });
+};
 
-  pageDiv.appendChild(usageDiv);
-  renderFAB("usage");
+const renderUsageChart = (canvas) => {
+    // Aggregate usage by date (last 7 days active) or just all time daily activty
+    // Let's show last 7 days of activity
+    
+    // 1. Get last 7 days dates
+    const dates = [];
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        dates.push(d.toISOString().split('T')[0]);
+    }
+    
+    // 2. Count items used per day
+    const dataPoints = dates.map(date => {
+        return usage.filter(u => u.date === date).length;
+    });
+    
+    // 3. Render Chart
+    new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels: dates.map(d => formatDate(d).split(' ').slice(0,2).join(' ')), // "12th Dec"
+            datasets: [{
+                label: 'Items Used',
+                data: dataPoints,
+                backgroundColor: 'rgba(0, 150, 136, 0.5)',
+                borderColor: 'rgba(0, 150, 136, 1)',
+                borderWidth: 1,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { precision: 0, color: '#a0a0a0' },
+                    grid: { color: '#333' }
+                },
+                x: {
+                    ticks: { color: '#a0a0a0' },
+                    grid: { display: false }
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                title: {
+                    display: true,
+                    text: 'Daily Activity (Last 7 Days)',
+                    color: '#e0e0e0',
+                    font: { size: 14 }
+                }
+            }
+        }
+    });
 };
 
 const renderInventoryPage = (pageDiv) => {
   let filtersDiv = document.createElement("div");
-  filtersDiv.classList.add("filters");
+  filtersDiv.classList.add("filter-bar");
 
   let searchBar = document.createElement("input");
+  searchBar.classList.add("form__input", "form__input--search");
   searchBar.placeholder = "Search...";
+
+  // searchBar inline styles removed -> handled by form__input--search
 
   ["In", "Almost", "Out"].forEach((status, index) => {
     const btn = document.createElement("button");
-    btn.classList.add(status.toLowerCase());
+    btn.classList.add("filter-bar__btn", `filter-bar__btn--${status.toLowerCase()}`);
     btn.innerText = status;
 
     btn.onclick = () => {
@@ -422,35 +715,23 @@ const renderInventoryPage = (pageDiv) => {
   });
 
   const inventoryDiv = document.createElement("div");
-  inventoryDiv.classList.add("inventory");
+  inventoryDiv.classList.add("card-list");
 
 
 
   // Search Container with Reset Button
   const searchContainer = document.createElement("div");
-  searchContainer.style.display = "flex";
-  searchContainer.style.alignItems = "center";
-  searchContainer.style.gap = "10px";
-  searchContainer.style.marginBottom = "10px";
+  searchContainer.classList.add("search-container");
+  // Removed inline styles for searchContainer
 
-  searchBar.style.flex = "1";
-  searchBar.style.marginBottom = "0"; // Override if needed
+  // searchBar.style.flex = "1"; // Moved to CSS
+  // searchBar.style.marginBottom = "0"; // Moved to CSS
   
   const settingsBtn = document.createElement("button");
   settingsBtn.innerHTML = '<span class="material-symbols-outlined">settings</span>';
-  settingsBtn.style.padding = "10px";
-  settingsBtn.style.borderRadius = "50%";
-  settingsBtn.style.border = "none";
-  settingsBtn.style.backgroundColor = "transparent";
-  settingsBtn.style.color = "#888";
-  settingsBtn.style.cursor = "pointer";
-  settingsBtn.style.display = "flex";
-  settingsBtn.style.alignItems = "center";
-  settingsBtn.style.justifyContent = "center";
+  settingsBtn.classList.add("btn", "btn--icon");
   settingsBtn.title = "Settings";
   settingsBtn.onclick = () => openSettingsModal();
-  settingsBtn.onmouseover = () => settingsBtn.style.color = "teal";
-  settingsBtn.onmouseout = () => settingsBtn.style.color = "#888";
 
   searchContainer.appendChild(searchBar);
   searchContainer.appendChild(settingsBtn);
@@ -467,9 +748,8 @@ const renderInventoryPage = (pageDiv) => {
 
   generateInventory(inventoryDiv);
   
-  // Remove FAB if exists
-  const existingFab = document.querySelector(".fab");
-  if (existingFab) existingFab.remove();
+  // Enable FAB
+  renderFAB("inventory");
 };
 
 // generate inventory items
@@ -505,24 +785,24 @@ const generateInventory = (inventoryDiv, index = 3, searchTerm) => {
 
 const generateInventoryCard = (item) => {
   let inventoryCardDiv = document.createElement("div");
-  inventoryCardDiv.classList.add("inventory-card");
+  inventoryCardDiv.classList.add("card", "card--inventory");
   let nameDiv = document.createElement("p");
-  nameDiv.classList.add("name");
+  nameDiv.classList.add("card__header");
   nameDiv.innerText = item.name;
   let qtyDiv = document.createElement("p");
-  qtyDiv.classList.add("qty");
+  qtyDiv.classList.add("card__badge");
 
   if (item.quantity > item.min) {
-    qtyDiv.classList.add("in");
+    qtyDiv.classList.add("card__badge--success");
   } else if (item.quantity == item.min) {
-    qtyDiv.classList.add("almost");
+    qtyDiv.classList.add("card__badge--warning");
   } else {
-    qtyDiv.classList.add("out");
+    qtyDiv.classList.add("card__badge--danger");
   }
 
-  qtyDiv.innerText = item.quantity;
+  qtyDiv.innerText = item.quantity+" x "+item.unit;
   let dateDiv = document.createElement("p");
-  dateDiv.classList.add("date");
+  dateDiv.classList.add("card__detail");
   dateDiv.innerText = item.lastUpdatedAt;
 
   inventoryCardDiv.appendChild(nameDiv);
@@ -538,7 +818,7 @@ const generateInventoryCard = (item) => {
 
 const generateDateTotalDiv = (date) => {
   let dateTotalDiv = document.createElement("div");
-  dateTotalDiv.classList.add("date-total");
+  dateTotalDiv.classList.add("list-header");
 
   let dateSpan = document.createElement("span");
   dateSpan.innerText = formatDate(date);
@@ -613,21 +893,21 @@ const generatePurchases = (purchasesDiv, filterDate, searchTerm) => {
 
 const generatePurchaseCard = (purchase) => {
   let purchaseCardDiv = document.createElement("div");
-  purchaseCardDiv.classList.add("purchase-card");
+  purchaseCardDiv.classList.add("card", "card--purchase");
   let nameDiv = document.createElement("div");
-  nameDiv.classList.add("name");
+  nameDiv.classList.add("card__header");
   nameDiv.innerText = purchase.name;
   let qtyDiv = document.createElement("div");
-  qtyDiv.classList.add("quantity");
+  qtyDiv.classList.add("card__field", "card__field--qty");
   qtyDiv.innerText = purchase.quantity;
   let priceDiv = document.createElement("div");
-  priceDiv.classList.add("price");
+  priceDiv.classList.add("card__field", "card__field--price");
   priceDiv.innerText = "₹ " + purchase.price;
   let unitDiv = document.createElement("div");
-  unitDiv.classList.add("unit");
+  unitDiv.classList.add("card__field", "card__field--unit");
   unitDiv.innerText = purchase.unit;
   let amtDiv = document.createElement("div");
-  amtDiv.classList.add("amount");
+  amtDiv.classList.add("card__field", "card__field--amount");
   amtDiv.innerText = "₹ " + purchase.price * purchase.quantity;
 
   purchaseCardDiv.appendChild(nameDiv);
@@ -636,10 +916,209 @@ const generatePurchaseCard = (purchase) => {
   purchaseCardDiv.appendChild(unitDiv);
   purchaseCardDiv.appendChild(amtDiv);
 
+  purchaseCardDiv.style.cursor = "pointer";
+  purchaseCardDiv.onclick = () => openEditPurchaseModal(purchase);
+
   return purchaseCardDiv;
 };
 
-// FAB and Modal Logic
+// Inventory Update Helper
+const updateInventoryFromTransaction = (item, type, isRevert = false) => {
+    // If isRevert is true, we reverse the operation.
+    // Purchase: Add (Normal), Remove (Revert)
+    // Usage: Remove (Normal), Add (Revert)
+    
+    let quantityChange = item.quantity;
+    if (type === "purchase") {
+        quantityChange = isRevert ? -item.quantity : item.quantity;
+    } else if (type === "usage") {
+        quantityChange = isRevert ? item.quantity : -item.quantity;
+    }
+
+    let inventoryItem = inventory.find(i => i.name.toLowerCase() === item.name.toLowerCase());
+    
+    if (inventoryItem) {
+        inventoryItem.quantity += quantityChange;
+        inventoryItem.lastUpdatedAt = item.date;
+        // If reversing a purchase/usage brings it to neg (shouldn't happen with valid logic) or 0
+        // We generally keep the item in inventory even if 0.
+    } else if (!isRevert) {
+        // If applying a NEW transaction and item doesn't exist, create it.
+        // If Reverting, we don't create an item if it's missing (it might have been deleted manually).
+        inventory.push({
+            name: item.name,
+            quantity: quantityChange, // Will be positive for purchase, likely negative for usage if starting fresh
+            unit: item.unit,
+            min: 0,
+            lastUpdatedAt: item.date
+        });
+    }
+};
+
+const openEditPurchaseModal = (purchase) => {
+  const modal = document.createElement("div");
+  modal.classList.add("modal");
+  
+  const modalContent = document.createElement("div");
+  modalContent.classList.add("modal__content");
+  
+  const closeBtn = document.createElement("span");
+  closeBtn.classList.add("modal__close");
+  closeBtn.innerHTML = "&times;";
+  closeBtn.onclick = () => modal.remove();
+  
+  // Reuse the item select logic or just simple inputs?
+  // Use simple inputs for edit to avoid complexity of "New" vs "Existing" switch during edit, 
+  // but keep it flexible.
+  
+  const form = document.createElement("form");
+  form.innerHTML = `
+      <h3 class="modal__title">Edit Purchase</h3>
+      <label class="form__label">Name</label>
+      <input type="text" name="name" class="form__input" value="${purchase.name}" required>
+      <label class="form__label">Quantity</label>
+      <input type="number" name="quantity" class="form__input" value="${purchase.quantity}" step="0.1" required>
+      <label class="form__label">Unit</label>
+      <input type="text" name="unit" class="form__input" value="${purchase.unit}" required>
+      <label class="form__label">Price</label>
+      <input type="number" name="price" class="form__input" value="${purchase.price}" required>
+      <label class="form__label">Date</label>
+      <input type="date" name="date" class="form__input" value="${purchase.date}" required>
+      
+      <div class="modal__actions">
+        <button type="submit" class="btn btn--primary" style="flex:1">Update</button>
+        <button type="button" id="deleteBtn" class="btn btn--danger" style="flex:1">Delete</button>
+      </div>
+  `;
+  
+  form.onsubmit = (e) => {
+    e.preventDefault();
+    
+    // 1. Revert Old
+    updateInventoryFromTransaction(purchase, "purchase", true);
+    
+    // 2. Update Object
+    const newItem = {
+        name: form.name.value,
+        quantity: parseFloat(form.quantity.value),
+        unit: form.unit.value,
+        price: parseFloat(form.price.value),
+        date: form.date.value
+    };
+    
+    // Update reference
+    Object.assign(purchase, newItem);
+    
+    // 3. Apply New
+    updateInventoryFromTransaction(purchase, "purchase", false);
+    
+    saveData();
+    generatePage(0);
+    modal.remove();
+  };
+  
+  const deleteBtn = form.querySelector("#deleteBtn");
+  deleteBtn.onclick = () => {
+    if(confirm("Delete this purchase? Inventory will be adjusted.")) {
+        // Revert inventory
+        updateInventoryFromTransaction(purchase, "purchase", true);
+        
+        // Remove from array
+        const index = purchases.indexOf(purchase);
+        if (index > -1) {
+            purchases.splice(index, 1);
+        }
+        
+        saveData();
+        generatePage(0);
+        modal.remove();
+    }
+  };
+
+  modalContent.appendChild(closeBtn);
+  modalContent.appendChild(form);
+  modal.appendChild(modalContent);
+  document.body.appendChild(modal);
+};
+
+const openEditUsageModal = (usageItem) => {
+  const modal = document.createElement("div");
+  modal.classList.add("modal");
+  
+  const modalContent = document.createElement("div");
+  modalContent.classList.add("modal__content");
+  
+  const closeBtn = document.createElement("span");
+  closeBtn.classList.add("modal__close");
+  closeBtn.innerHTML = "&times;";
+  closeBtn.onclick = () => modal.remove();
+  
+  const form = document.createElement("form");
+  form.innerHTML = `
+      <h3 class="modal__title">Edit Usage</h3>
+      <label class="form__label">Name</label>
+      <input type="text" name="name" class="form__input" value="${usageItem.name}" required>
+      <label class="form__label">Quantity</label>
+      <input type="number" name="quantity" class="form__input" value="${usageItem.quantity}" step="0.1" required>
+      <label class="form__label">Unit</label>
+      <input type="text" name="unit" class="form__input" value="${usageItem.unit}" required>
+      <label class="form__label">Date</label>
+      <input type="date" name="date" class="form__input" value="${usageItem.date}" required>
+      
+      <div class="modal__actions">
+        <button type="submit" class="btn btn--primary" style="flex:1">Update</button>
+        <button type="button" id="deleteBtn" class="btn btn--danger" style="flex:1">Delete</button>
+      </div>
+  `;
+  
+  form.onsubmit = (e) => {
+    e.preventDefault();
+    
+    // 1. Revert Old
+    updateInventoryFromTransaction(usageItem, "usage", true);
+    
+    // 2. Update Object
+    const newItem = {
+        name: form.name.value,
+        quantity: parseFloat(form.quantity.value),
+        unit: form.unit.value,
+        date: form.date.value
+    };
+    
+    // Update reference
+    Object.assign(usageItem, newItem);
+    
+    // 3. Apply New
+    updateInventoryFromTransaction(usageItem, "usage", false);
+    
+    saveData();
+    generatePage(1);
+    modal.remove();
+  };
+  
+  const deleteBtn = form.querySelector("#deleteBtn");
+  deleteBtn.onclick = () => {
+    if(confirm("Delete this usage entry? Inventory will be adjusted.")) {
+        // Revert inventory
+        updateInventoryFromTransaction(usageItem, "usage", true);
+        
+        // Remove from array
+        const index = usage.indexOf(usageItem);
+        if (index > -1) {
+            usage.splice(index, 1);
+        }
+        
+        saveData();
+        generatePage(1);
+        modal.remove();
+    }
+  };
+
+  modalContent.appendChild(closeBtn);
+  modalContent.appendChild(form);
+  modal.appendChild(modalContent);
+  document.body.appendChild(modal);
+};
 
 const renderFAB = (type) => {
   // Remove existing FAB if any
@@ -658,109 +1137,142 @@ const openModal = (type) => {
   modal.classList.add("modal");
   
   const modalContent = document.createElement("div");
-  modalContent.classList.add("modal-content");
+  modalContent.classList.add("modal__content");
   
   const closeBtn = document.createElement("span");
-  closeBtn.classList.add("close");
+  closeBtn.classList.add("modal__close");
   closeBtn.innerHTML = "&times;";
   closeBtn.onclick = () => modal.remove();
   
   const form = document.createElement("form");
   form.onsubmit = (e) => {
     e.preventDefault();
+    e.preventDefault();
     if (type === "purchase") handlePurchaseSubmit(e.target);
     if (type === "usage") handleUsageSubmit(e.target);
+    if (type === "inventory") handleInventorySubmit(e.target);
     modal.remove();
   };
 
+  if (type === "inventory") {
+      const formContent = `
+        <h3 class="modal__title">Add Inventory Item</h3>
+        <label class="form__label">Name</label>
+        <input type="text" name="name" class="form__input" placeholder="Item Name" required>
+        <label class="form__label">Quantity</label>
+        <input type="number" name="quantity" class="form__input" placeholder="0" step="0.1" required>
+        <label class="form__label">Unit</label>
+        <input type="text" name="unit" class="form__input" placeholder="e.g. kg, pcs" required>
+        <label class="form__label">Min Stock</label>
+        <input type="number" name="min" class="form__input" placeholder="Min Alert Level" required>
+        <label class="form__label">Price (Optional)</label>
+        <input type="number" name="price" class="form__input" placeholder="Price">
+        <button type="submit" class="btn btn--primary btn--full">Add Item</button>
+      `;
+      form.innerHTML = formContent;
+      modalContent.appendChild(closeBtn);
+      modalContent.appendChild(form);
+      modal.appendChild(modalContent);
+      document.body.appendChild(modal);
+      return; 
+  }
+
   const inventoryOptions = inventory.map(i => `<option value="${i.name}">${i.name}</option>`).join("");
   const itemSelectHTML = `
-    <select name="name" required onchange="this.form.unit.value = this.options[this.selectedIndex].dataset.unit || ''; this.form.price.value = this.options[this.selectedIndex].dataset.price || ''">
+    <select name="name" class="form__select" required>
       <option value="" disabled selected>Select Item</option>
       ${inventory.map(i => `<option value="${i.name}" data-unit="${i.unit || ''}" data-price="${i.price || ''}">${i.name}</option>`).join("")}
       <option value="new">+ Add New Item</option>
     </select>
   `;
 
-  // Helper to handle switching between select and input
-  const handleNameChangeScript = `
-    const select = this.form.name;
-    const nameInput = this.form.customName;
-    const unitInput = this.form.unit;
-    const priceInput = this.form.price;
-    
-    if (select.value === 'new') {
-       select.style.display = 'none';
-       nameInput.style.display = 'block';
-       nameInput.required = true;
-       select.required = false;
-       nameInput.focus();
-       unitInput.value = '';
-       unitInput.readOnly = false;
-       if(priceInput) {
-         priceInput.value = '';
-         priceInput.readOnly = false;
-       }
-    } else {
-       const selectedOption = select.options[select.selectedIndex];
-       unitInput.value = selectedOption.dataset.unit || '';
-       unitInput.readOnly = true;
-       if(priceInput) {
-         priceInput.value = selectedOption.dataset.price || '';
-         // priceInput.readOnly = true; // Maybe allow editing price? User might buy at different price.
-       }
-    }
-  `;
+  // Bulk Mode Toggle State
+  let isBulkMode = false;
 
-  if (type === "purchase") {
-    form.innerHTML = `
-      <h3>Add Purchase</h3>
-      ${itemSelectHTML}
-      <input type="text" name="customName" placeholder="Item Name" style="display:none">
-      <input type="number" name="quantity" placeholder="Quantity" step="0.1" required>
-      <input type="text" name="unit" placeholder="Unit (e.g., kg, pcs)" required>
-      <input type="number" name="price" placeholder="Price per Unit" required>
-      <input type="date" name="date" required value="${new Date().toISOString().split('T')[0]}">
-      <button type="submit">Add Purchase</button>
-    `;
-  } else if (type === "usage") {
-    form.innerHTML = `
-      <h3>Add Usage</h3>
-      ${itemSelectHTML}
-      <input type="text" name="customName" placeholder="Item Name" style="display:none">
-      <input type="number" name="quantity" placeholder="Quantity" step="0.1" required>
-      <input type="text" name="unit" placeholder="Unit (e.g., kg, pcs)" required>
-      <input type="date" name="date" required value="${new Date().toISOString().split('T')[0]}">
-      <button type="submit">Add Usage</button>
-    `;
-  }
+  const renderFormContent = () => {
+      form.innerHTML = ""; // Clear
+      
+      if (isBulkMode) {
+          const placeholder = type === "purchase" 
+            ? "e.g. Milk, 500ml, 2, 40, 80\nBread,, 1, 45" 
+            : "e.g. Milk, 500ml, 1\nBread,, 0.5";
+          
+          form.innerHTML = `
+            <h3 class="modal__title">Bulk Add ${type === "purchase" ? "Purchases" : "Usage"}</h3>
+            <p class="modal__msg" style="font-size:0.85em; text-align:left; opacity:0.8;">
+                Format: <strong>${type === "purchase" ? "Name, Unit, Qty, Price, [Total]" : "Name, Unit, Qty"}</strong>
+            </p>
+            <textarea name="bulkInput" class="form__textarea" rows="8" placeholder="${placeholder}" required style="font-family:monospace;"></textarea>
+            <label class="form__label">Date (Applied to all)</label>
+            <input type="date" name="date" class="form__input" value="${new Date().toISOString().split('T')[0]}" required>
+            
+            <button type="submit" class="btn btn--primary btn--full" style="margin-bottom:10px;">Process Bulk Add</button>
+            <button type="button" id="toggleModeBtn" class="btn btn--icon" style="width:100%; font-size:0.9em; text-decoration:underline;">&larr; Back to Single Item</button>
+          `;
+      } else {
+          // Standard Single Item Form
+          const formContent = `
+            <h3 class="modal__title">Add ${type === "purchase" ? "Purchase" : "Usage"}</h3>
+            ${itemSelectHTML}
+            
+            <!-- Custom Name Input (Hidden by default) -->
+            <input type="text" name="customName" class="form__input" placeholder="Item Name" style="display:none;">
+            
+            <div style="display:flex; gap:10px;">
+                <div style="flex:1">
+                    <label class="form__label">Quantity</label>
+                    <input type="number" name="quantity" class="form__input" step="0.1" required>
+                </div>
+                <div style="flex:1">
+                     <label class="form__label">Unit</label>
+                     <input type="text" name="unit" class="form__input" required>
+                </div>
+            </div>
+            
+             ${type === 'purchase' ? `
+            <label class="form__label">Price (Total)</label>
+            <input type="number" name="price" class="form__input" required>
+            ` : ''}
 
-  // Attach event listener for dropdown change
-  const selectElement = form.querySelector('select[name="name"]');
-  selectElement.onchange = function() {
-    const nameInput = form.querySelector('input[name="customName"]');
-    const unitInput = form.querySelector('input[name="unit"]');
-    const priceInput = form.querySelector('input[name="price"]');
-    
-    if (this.value === 'new') {
-        this.style.display = 'none';
-        nameInput.style.display = 'block';
-        nameInput.required = true;
-        this.required = false; // Disable select requirement
-        nameInput.focus();
-        unitInput.value = '';
-        unitInput.readOnly = false;
-        if (priceInput) priceInput.value = '';
-    } else {
-        const selectedOption = this.options[this.selectedIndex];
-        unitInput.value = selectedOption.dataset.unit || '';
-        unitInput.readOnly = true;
-        
-        if (priceInput) {
-            priceInput.value = selectedOption.dataset.price || '';
-        }
-    }
+            <label class="form__label">Date</label>
+            <input type="date" name="date" class="form__input" value="${new Date().toISOString().split('T')[0]}" required>
+
+            <button type="submit" class="btn btn--primary btn--full" style="margin-bottom:10px;">${type === 'purchase' ? 'Add Purchase' : 'Add Usage'}</button>
+            <button type="button" id="toggleModeBtn" class="btn btn--icon" style="width:100%; font-size:0.9em; text-decoration:underline;">Switch to Bulk Add mode</button>
+          `;
+          form.innerHTML = formContent;
+          
+          // Re-attach scripts for Single Item mode
+          const select = form.querySelector('select[name="name"]');
+          if(select) {
+              select.onchange = function() {
+                const customName = form.querySelector('input[name="customName"]');
+                const unitInput = form.querySelector('input[name="unit"]');
+                const priceInput = form.querySelector('input[name="price"]');
+                
+                if (this.value === 'new') {
+                    this.style.display = 'none';
+                    customName.style.display = 'block';
+                    customName.required = true;
+                    customName.focus();
+                    unitInput.value = "";
+                    if(priceInput) priceInput.value = "";
+                } else {
+                     const selectedRes = this.options[this.selectedIndex];
+                     unitInput.value = selectedRes.dataset.unit || '';
+                     if(priceInput) priceInput.value = selectedRes.dataset.price || '';
+                }
+              };
+          }
+      }
+      
+      form.querySelector("#toggleModeBtn").onclick = () => {
+          isBulkMode = !isBulkMode;
+          renderFormContent();
+      };
   };
+
+  renderFormContent();
 
 
   modalContent.appendChild(closeBtn);
@@ -774,39 +1286,76 @@ const openEditInventoryModal = (item) => {
   modal.classList.add("modal");
   
   const modalContent = document.createElement("div");
-  modalContent.classList.add("modal-content");
+  modalContent.classList.add("modal__content");
   
   const closeBtn = document.createElement("span");
-  closeBtn.classList.add("close");
+  closeBtn.classList.add("modal__close");
   closeBtn.innerHTML = "&times;";
   closeBtn.onclick = () => modal.remove();
   
   const form = document.createElement("form");
   form.innerHTML = `
-      <h3>Edit ${item.name}</h3>
-      <label>Name</label>
-      <input type="text" name="name" value="${item.name}" required>
-      <label>Quantity</label>
-      <input type="number" name="quantity" value="${item.quantity}" step="0.1" required>
-      <label>Unit</label>
-      <input type="text" name="unit" value="${item.unit || ''}" required>
-      <label>Min Stock</label>
-      <input type="number" name="min" value="${item.min || 0}" required>
-      <label>Price</label>
-      <input type="number" name="price" value="${item.price || ''}" placeholder="Price">
-      <button type="submit">Save Changes</button>
+      <h3 class="modal__title">Edit ${item.name}</h3>
+      <label class="form__label">Name</label>
+      <input type="text" name="name" class="form__input" value="${item.name}" required>
+      <label class="form__label">Quantity</label>
+      <input type="number" name="quantity" class="form__input" value="${item.quantity}" step="0.1" required>
+      <label class="form__label">Unit</label>
+      <input type="text" name="unit" class="form__input" value="${item.unit || ''}" required>
+      <label class="form__label">Min Stock</label>
+      <input type="number" name="min" class="form__input" value="${item.min || 0}" required>
+      <label class="form__label">Price</label>
+      <input type="text" name="price" class="form__input" value="${item.price || ''}" placeholder="Price">
+      
+      <div style="margin-bottom: var(--spacing-md); display: flex; align-items: center; gap: 8px;">
+        <input type="checkbox" id="logToHistory" name="logToHistory">
+        <label for="logToHistory" style="color: var(--color-text-muted); cursor: pointer; font-size: 0.9rem;">Log changes to history? (Auto-add Purchase/Usage)</label>
+      </div>
+
+      <div class="modal__actions">
+        <button type="submit" class="btn btn--primary" style="flex:1">Save Changes</button>
+        <button type="button" id="deleteInventoryBtn" class="btn btn--danger" style="flex:1">Delete</button>
+      </div>
   `;
   
   form.onsubmit = (e) => {
       e.preventDefault();
       
       const originalName = item.name;
+      const originalQuantity = item.quantity;
+      
       const newName = form.name.value;
+      const newQuantity = parseFloat(form.quantity.value);
       const newUnit = form.unit.value;
+      
+      // Auto-Log History Logic
+      if (form.logToHistory.checked) {
+          const diff = newQuantity - originalQuantity;
+          if (diff > 0) {
+              // Add Purchase
+              const newPurchase = {
+                  name: newName,
+                  quantity: diff,
+                  unit: newUnit,
+                  price: parseFloat(form.price.value) || 0,
+                  date: new Date().toISOString().split('T')[0]
+              };
+              purchases.push(newPurchase);
+          } else if (diff < 0) {
+              // Add Usage
+              const newUsage = {
+                  name: newName,
+                  quantity: Math.abs(diff),
+                  unit: newUnit,
+                  date: new Date().toISOString().split('T')[0]
+              };
+              usage.push(newUsage);
+          }
+      }
 
       // Update item
       item.name = newName;
-      item.quantity = parseFloat(form.quantity.value);
+      item.quantity = newQuantity;
       item.unit = newUnit;
       item.min = parseFloat(form.min.value);
       if (form.price.value) item.price = parseFloat(form.price.value);
@@ -830,6 +1379,19 @@ const openEditInventoryModal = (item) => {
       generatePage(2); // Refresh Inventory Page
       modal.remove();
   };
+  
+  const deleteBtn = form.querySelector("#deleteInventoryBtn");
+  deleteBtn.onclick = () => {
+    if(confirm(`Delete ${item.name} from inventory? This will NOT delete purchase/usage history.`)) {
+        const index = inventory.indexOf(item);
+        if (index > -1) {
+            inventory.splice(index, 1);
+        }
+        saveData();
+        generatePage(2);
+        modal.remove();
+    }
+  };
 
   modalContent.appendChild(closeBtn);
   modalContent.appendChild(form);
@@ -838,40 +1400,74 @@ const openEditInventoryModal = (item) => {
 };
 
 const handlePurchaseSubmit = (form) => {
-  const isNewItem = form.name.style.display === 'none';
-  const itemName = isNewItem ? form.customName.value : form.name.value;
-  
-  const newPurchase = {
-    name: itemName,
-    quantity: parseFloat(form.quantity.value),
-    unit: form.unit.value,
-    price: parseFloat(form.price.value),
-    date: form.date.value
-  };
-  purchases.push(newPurchase);
+  if (form.bulkInput) {
+      // HANDLE BULK
+      const lines = form.bulkInput.value.split('\n');
+      let successCount = 0;
+      
+      lines.forEach(line => {
+          const parts = line.split(',').map(s => s.trim());
+          if (parts.length >= 3) { // Expect Name, Unit, Qty, [Price], [Total]
+              const name = parts[0];
+              let unit = parts[1];
+              let qty = parseFloat(parts[2]);
+              let price = parts[3] ? parseFloat(parts[3]) : 0;
+              let total = parts[4] ? parseFloat(parts[4]) : 0;
+              
+              if (name && !isNaN(qty)) {
+                  // Logic v2: Round Qty
+                  qty = Math.round(qty);
+                  
+                  // Logic v2: Calc Price from Total if Price missing/zero and Total exists
+                  if (!price && total && qty > 0) {
+                      price = Math.round(total / qty);
+                  }
 
-  // Update Inventory
-  const existingItem = inventory.find(i => i.name.toLowerCase() === itemName.toLowerCase());
-  if (existingItem) {
-    existingItem.quantity += newPurchase.quantity;
-    existingItem.lastUpdatedAt = formatDate(newPurchase.date); // Using formatted date for display consistency? Or should act as date string? Mock data uses "DD/MM/YY" format or similar.
-    // The mock data uses "01/12/25" (DD/MM/YY). formatDate returns "DDth MMM YYYY".
-    // I will stick to simple string for now or better, update with YYYY-MM-DD and let display handle it.
-    // Actually mock data has "01/12/25". Let's just use the form date YYYY-MM-DD for consistency with new entries if we were rewriting, 
-    // but to match existing display style maybe I should format it or just leave it.
-    // The current display uses the string directly.
-    // Let's us DD/MM/YY to match existing mock data style if possible, or just the YYYY-MM-DD.
-    // Given the mix, I'll use YYYY-MM-DD as it's cleaner.
-    existingItem.lastUpdatedAt = newPurchase.date; 
+                  // Logic v2: Smart Unit Default
+                  if (!unit || unit === "") {
+                      const existingItem = inventory.find(i => i.name.toLowerCase() === name.toLowerCase());
+                      if (existingItem && existingItem.unit) {
+                          unit = existingItem.unit;
+                      } else {
+                          unit = ""; // Store as empty, render as no./nos.
+                      }
+                  }
+
+                  const newPurchase = {
+                      name: name,
+                      quantity: qty,
+                      unit: unit,
+                      price: price,
+                      date: form.date.value
+                  };
+                  purchases.push(newPurchase);
+                  updateInventoryFromTransaction(newPurchase, "purchase", false);
+                  successCount++;
+              }
+          }
+      });
+      if (successCount > 0) {
+          alert(`Successfully added ${successCount} items.`);
+      } else {
+          alert("No valid items found. Format: Name, Unit, Qty, Price, [Total]");
+          return; 
+      }
   } else {
-    // New Item
-    inventory.push({
-      name: itemName,
-      quantity: newPurchase.quantity,
-      unit: newPurchase.unit,
-      min: 0, // Default min
-      lastUpdatedAt: newPurchase.date
-    });
+      // HANDLE SINGLE
+      const isNewItem = form.name.style.display === 'none';
+      const itemName = isNewItem ? form.customName.value : form.name.value;
+      
+      const newPurchase = {
+        name: itemName,
+        quantity: parseFloat(form.quantity.value),
+        unit: form.unit.value,
+        price: parseFloat(form.price.value),
+        date: form.date.value
+      };
+      purchases.push(newPurchase);
+
+      // Update Inventory using helper
+      updateInventoryFromTransaction(newPurchase, "purchase", false);
   }
 
   saveData(); // Save changes
@@ -879,35 +1475,93 @@ const handlePurchaseSubmit = (form) => {
 };
 
 const handleUsageSubmit = (form) => {
-  const isNewItem = form.name.style.display === 'none';
-  const itemName = isNewItem ? form.customName.value : form.name.value;
+  if (form.bulkInput) {
+      // HANDLE BULK
+      const lines = form.bulkInput.value.split('\n');
+      let successCount = 0;
+      
+      lines.forEach(line => {
+          const parts = line.split(',').map(s => s.trim());
+          if (parts.length >= 3) { // Expect Name, Unit, Qty
+              const name = parts[0];
+              let unit = parts[1];
+              let qty = parseFloat(parts[2]);
+              
+              if (name && !isNaN(qty)) {
+                   // Logic v2: Round Qty
+                   qty = Math.round(qty);
+                   
+                   // Logic v2: Smart Unit Default
+                  if (!unit || unit === "") {
+                      const existingItem = inventory.find(i => i.name.toLowerCase() === name.toLowerCase());
+                      if (existingItem && existingItem.unit) {
+                          unit = existingItem.unit;
+                      } else {
+                          unit = ""; // Store as empty
+                      }
+                  }
 
-  const newUsage = {
-    name: itemName,
-    quantity: parseFloat(form.quantity.value),
-    unit: form.unit.value,
-    date: form.date.value
-  };
-  usage.push(newUsage);
-
-  // Update Inventory
-  const existingItem = inventory.find(i => i.name.toLowerCase() === itemName.toLowerCase());
-  if (existingItem) {
-    existingItem.quantity -= newUsage.quantity;
-    existingItem.lastUpdatedAt = newUsage.date;
+                  const newUsage = {
+                      name: name,
+                      quantity: qty,
+                      unit: unit,
+                      date: form.date.value
+                  };
+                  usage.push(newUsage);
+                  updateInventoryFromTransaction(newUsage, "usage", false);
+                  successCount++;
+              }
+          }
+      });
+       if (successCount > 0) {
+          alert(`Successfully added ${successCount} items.`);
+      } else {
+          alert("No valid items found. Format: Name, Unit, Qty");
+          return;
+      }
   } else {
-    // Usage for item not in inventory? Add it with negative quantity?
-    inventory.push({
+      // HANDLE SINGLE
+      const isNewItem = form.name.style.display === 'none';
+      const itemName = isNewItem ? form.customName.value : form.name.value;
+
+      const newUsage = {
         name: itemName,
-        quantity: -newUsage.quantity,
-        unit: newUsage.unit,
-        min: 0,
-        lastUpdatedAt: newUsage.date
-    });
+        quantity: parseFloat(form.quantity.value),
+        unit: form.unit.value,
+        date: form.date.value
+      };
+      usage.push(newUsage);
+
+      // Update Inventory using helper
+      updateInventoryFromTransaction(newUsage, "usage", false);
   }
   
   saveData(); // Save changes
   generatePage(1); // Refresh usage page
+};
+
+const handleInventorySubmit = (form) => {
+    const newItem = {
+        name: form.name.value,
+        quantity: parseFloat(form.quantity.value),
+        unit: form.unit.value,
+        min: parseFloat(form.min.value),
+        price: parseFloat(form.price.value) || 0,
+        lastUpdatedAt: new Date().toISOString().split('T')[0]
+    };
+    
+    // Check if exists
+    const existingIndex = inventory.findIndex(i => i.name.toLowerCase() === newItem.name.toLowerCase());
+    if (existingIndex > -1) {
+        alert("Item already exists in inventory. Updating quantity.");
+        inventory[existingIndex].quantity += newItem.quantity;
+        // Optionally update other fields? keeping simple for now.
+    } else {
+        inventory.push(newItem);
+    }
+    
+    saveData();
+    generatePage(2);
 };
 
 

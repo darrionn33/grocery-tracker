@@ -10,22 +10,23 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
     />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
   <body>
   <body>
-    <div class="page"></div>
-    <div class="bottom-nav-bar">
-      <div class="purchases" data-page="0">
-        <span id="icon" class="material-symbols-outlined">receipt</span>
-        <p>Purchases</p>
+    <div class="app-content"></div>
+    <div class="nav">
+      <div class="nav__item" data-page="0">
+        <span class="material-symbols-outlined nav__icon">receipt</span>
+        <p class="nav__label">Purchases</p>
       </div>
-      <div class="usage" data-page="1">
-        <span id="icon" class="material-symbols-outlined">chart_data</span>
-        <p>Usage</p>
+      <div class="nav__item" data-page="1">
+        <span class="material-symbols-outlined nav__icon">chart_data</span>
+        <p class="nav__label">Usage</p>
       </div>
-      <div class="inventory selected" data-page="2">
-        <span id="icon" class="material-symbols-outlined">view_list</span>
-        <p>Inventory</p>
+      <div class="nav__item nav__item--active" data-page="2">
+        <span class="material-symbols-outlined nav__icon">view_list</span>
+        <p class="nav__label">Inventory</p>
       </div>
     </div>
   </body>
